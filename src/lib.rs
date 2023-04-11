@@ -1,5 +1,5 @@
-use napi::*;
-use napi_derive::{js_function, napi};
+pub use napi::{*, bindgen_prelude::*};
+use napi_derive::napi;
 use std::f64::consts::PI;
 use std::collections::HashMap;
 
@@ -26,16 +26,19 @@ pub struct Feature {
   pub properties: HashMap<String, String>,
   pub geometry: Geometry
 }
-impl Clone for Feature {
-  fn clone(&self) -> Feature {
-    let feature = self.clone();
-    Feature {
-      _type: feature._type,
-      properties: feature.properties.clone(),
-      geometry: feature.geometry.clone()
-    }
-  }
-}
+
+// impl Clone for Feature {
+//   fn clone(&self) -> Feature {
+//     println!("====");
+//
+//     let feature = self.clone();
+//     Feature {
+//       _type: feature._type,
+//       properties: feature.properties.clone(),
+//       geometry: feature.geometry.clone()
+//     }
+//   }
+// }
 
 #[napi(object)]
 #[derive(Clone, Copy, Debug, Default)]
@@ -91,17 +94,17 @@ impl DefaultOptions {
 
 #[napi]
 pub struct SuperCluster {
-  pub(crate) options: DefaultOptions,
-  pub(crate) points: Option<Vec<Feature>>
+  options: DefaultOptions,
+  points: Option<Vec<Feature>>
 }
 
 #[napi]
 impl SuperCluster {
+
   #[napi(constructor)]
-  pub fn new(&self, options: Option<DefaultOptions>) -> SuperCluster {
+  pub fn new(options: Option<DefaultOptions>) -> SuperCluster {
     let options = options.and_then(|o| Some(o)).unwrap_or_default();
 
-    println!("{:?}", options);
     SuperCluster {
       options: DefaultOptions::new().merge(&options),
       points: None
@@ -109,8 +112,7 @@ impl SuperCluster {
   }
 
   #[napi]
-  pub fn load(&self, points: Vec<Feature>) -> Self {
-    println!("{:?}", points);
+  pub fn load(&mut self, points: Vec<Feature>) -> Self {
     let DefaultOptions {
       log,
       min_zoom,
@@ -118,10 +120,11 @@ impl SuperCluster {
       node_size,
       ..
     } = self.options;
-
     let mut clusters:Vec<PointCluster> = vec![];
     for (index, point) in points.iter().enumerate() {
-      clusters.push(self.create_point_cluster(point.clone(), index))
+      println!("index {:?}, point {:?}", index, point);
+      // self.create_point_cluster(point, index);
+      clusters.push(self.create_point_cluster(point.clone(), index));
     }
     println!("clusters: {:?}", clusters);
 
@@ -131,23 +134,25 @@ impl SuperCluster {
     }
   }
 
-  fn create_point_cluster(&self, p: Feature, id: usize) -> PointCluster  {
-    let coordinates = p.geometry.coordinates;
+  fn create_point_cluster(&self, p: &Feature, id: usize) -> PointCluster {
+    let p = p.clone();
+    let coordinates = &p.geometry.coordinates;
     let [x, y]: [f64; 2] = [coordinates[0], coordinates[1]];
+
     PointCluster {
-      x: SuperCluster::lng_x(x),
-      y: SuperCluster::lng_y(y),
+      x: self.fround(self.lng_x(x)),
+      y: self.fround(self.lng_y(y)),
       zoom: f64::INFINITY,
       index: id,
       parent_id: -1
     }
   }
 
-  pub fn lng_x(lng: f64) -> f64 {
+  pub fn lng_x(&self, lng: f64) -> f64 {
     (lng / 360 as f64) + 0.5
   }
 
-  pub fn lng_y(lat: f64) -> f64 {
+  pub fn lng_y(&self, lat: f64) -> f64 {
     let sin = (lat * PI / 180.0).sin();
     let y = 0.5 - 0.25 * ((1.0 + sin) / (1.0 - sin)).ln() / PI;
 
@@ -158,7 +163,7 @@ impl SuperCluster {
     }
   }
 
-  pub fn fround(x: f64) -> f32 {
-    f32::from_bits(x.to_bits() as u32)
+  pub fn fround(&self, x: f64) -> f64 {
+    f64::from_bits(x.to_bits() as u64)
   }
 }
