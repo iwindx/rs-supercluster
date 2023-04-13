@@ -3,7 +3,7 @@ use napi_derive::napi;
 
 #[napi(object)]
 #[derive(Clone, Copy, Debug, Default)]
-pub(crate) struct DefaultOptions {
+pub struct DefaultOptions {
     pub min_zoom: Option<u8>,
     pub max_zoom: Option<u8>,
     pub min_points: Option<u8>,
@@ -18,7 +18,7 @@ impl DefaultOptions {
     pub fn new() -> Self {
         DefaultOptions {
             min_zoom: Some(0),
-            max_zoom: Some(18),
+            max_zoom: Some(16),
             min_points: Some(2),
             radius: Some(40),
             extent: Some(512),
@@ -51,4 +51,13 @@ impl DefaultOptions {
             generate_id: Some(other.generate_id.unwrap_or(generate_id.unwrap())),
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PointCluster {
+    pub x: f64,
+    pub y: f64,
+    pub zoom: f64,
+    pub index: usize,
+    pub parent_id: i8,
 }

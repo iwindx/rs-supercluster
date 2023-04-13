@@ -5,18 +5,11 @@ use kdbush::KDBush;
 pub use napi::{bindgen_prelude::*, *};
 use napi_derive::napi;
 use std::f64::consts::PI;
-use option::DefaultOptions;
+use std::fmt::Pointer;
+use option::*;
 use point::*;
 
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct PointCluster {
-  x: f64,
-  y: f64,
-  zoom: f64,
-  index: usize,
-  parent_id: i8,
-}
 
 #[napi]
 pub struct SuperCluster {
@@ -27,26 +20,33 @@ pub struct SuperCluster {
 
 #[napi]
 impl SuperCluster {
+
   #[napi(constructor)]
   pub fn new(options: Option<DefaultOptions>) -> SuperCluster {
     let options = options.and_then(|o| Some(o)).unwrap_or_default();
 
+    let options = DefaultOptions::new().merge(&options);
+    let max_zoom = options.max_zoom.unwrap_or_default();
+    let mut trees = Vec::with_capacity(max_zoom as usize + 1);
+    for _ in 0..(max_zoom as usize + 1) {
+      trees.push(None);
+    }
     SuperCluster {
-      options: DefaultOptions::new().merge(&options),
+      options,
       points: None,
-      trees: vec![None]
+      trees
     }
   }
 
   #[napi]
   pub fn load(&mut self, points: Vec<Feature>) -> Self {
-    let DefaultOptions {
-      log,
-      min_zoom: Some(min_zoom),
-      max_zoom: Some(max_zoom),
-      node_size,
-      ..
-    } = self.options;
+
+    let (max_zoom, min_zoom, node_size) = (
+      self.options.max_zoom.unwrap_or_default(),
+      self.options.min_zoom.unwrap_or_default(),
+      self.options.node_size.unwrap_or_default(),
+    );
+
     let mut clusters: Vec<PointCluster> = vec![];
     for (index, point) in points.iter().enumerate() {
       clusters.push(self.create_point_cluster(point.clone(), index));
@@ -56,7 +56,9 @@ impl SuperCluster {
     for cluster in &clusters {
       _points.push((cluster.x, cluster.y));
     }
-    self.trees[(max_zoom + 1) as usize] = Some(KDBush::create(_points, node_size.unwrap()));
+    println!("(max_zoom + 1) as usize {:?}", (max_zoom + 1) as usize);
+
+    self.trees[(max_zoom) as usize] = Some(KDBush::create(_points, node_size));
 
     for z in (min_zoom..=max_zoom).rev() {
       let cluster = self._cluster(clusters.clone(), z);
@@ -70,16 +72,16 @@ impl SuperCluster {
   }
 
   fn _cluster(&self, points: Vec<PointCluster>, zoom: u8) {
-    let cluster = [];
-    let DefaultOptions {
-      radius: Some(radius),
-      extent: Some(extent),
-      min_points,
-      ..
-    } = self.options;
+    // let cluster = [];
+    let mut points = points.clone();
+    let (radius, extent, min_points) = (
+      self.options.radius.unwrap_or_default(),
+      self.options.extent.unwrap_or_default(),
+      self.options.min_points.unwrap_or_default(),
+    );
     let power = 2_f64.powi(zoom as i32);
-    let r = radius as u16 / (extent * power as u16);
 
+    let r = radius as f64 / (extent as f64 * power);
     for i in 0..points.len() {
       let mut p = &mut points[i];
 
@@ -88,11 +90,15 @@ impl SuperCluster {
       }
 
       p.zoom = zoom as f64;
-      let Some(tree) = &self.trees[(zoom + 1) as usize];
 
-      let neighbor_ids = tree.within(p.x, p.y, r as f64, |id| print!("{} ", id));
+      let tree = match &self.trees[(zoom) as usize] {
+        Some(tree) => tree,
+        None => panic!("the option is empty")
+      };
+
+      let neighbor_ids = tree.within(p.x, p.y, r, |id| print!("{} ", id));
       let numPoints = 1;
-      neighbor_ids
+      println!("neighbor_ids {:?}", neighbor_ids);
     }
   }
 

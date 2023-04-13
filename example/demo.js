@@ -1,7 +1,5 @@
 const { SuperCluster } = require("../index");
 const Supercluster1 = require('supercluster');
-
-const superCluster = new SuperCluster();
 const points = [{
     type: 'Feature',
     properties: {
@@ -12,9 +10,13 @@ const points = [{
         coordinates: [116.40, 39.92]
     }
 }]
+const supercluster1 = new Supercluster1();
+supercluster1.load(points);
+
+const superCluster = new SuperCluster();
+
 superCluster.load(points);
 // console.log('superCluster', superCluster);
 
 
-const supercluster1 = new Supercluster1();
-supercluster1.load(points);
+
