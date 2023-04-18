@@ -9,7 +9,7 @@ pub struct Geometry {
 }
 
 #[napi(object)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug,Clone, PartialEq)]
 pub struct Feature {
     pub _type: String,
     pub properties: HashMap<String, String>,

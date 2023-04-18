@@ -61,3 +61,28 @@ pub struct PointCluster {
     pub index: usize,
     pub parent_id: i8,
 }
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CreateCluster {
+    pub x: f64,
+    pub y: f64,
+    pub zoom: f64,
+    pub id: usize,
+    pub parent_id: i8,
+    pub num_points: u8,
+}
+
+pub enum Cluster {
+    PointClusterItem(PointCluster),
+    CreateClusterItem(CreateCluster),
+}
+
+impl Cluster {
+    fn value(&self) -> (f64, f64) {
+        match self {
+            Cluster::PointClusterItem(point) => (point.x, point.y),
+            Cluster::CreateClusterItem(point) => (point.x, point.y)
+        }
+    }
+}
