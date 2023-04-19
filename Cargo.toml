@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 napi = "2"
 napi-derive = "2"
 geojson = "*"
-kdbush = "0.2"
+rs-kdbush = "0.2.0"
 
 [build-dependencies]
 napi-build = "2"

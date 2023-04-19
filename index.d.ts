@@ -19,7 +19,7 @@ export interface Geometry {
 }
 export interface Feature {
   type: string
-  properties: Record<string, string>
+  properties: Record<string, unknown>
   geometry: Geometry
 }
 export class SuperCluster {

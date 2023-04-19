@@ -1,7 +1,6 @@
 mod option;
 mod point;
-
-use kdbush::KDBush;
+use rs_kdbush::KDBush;
 pub use napi::{bindgen_prelude::*, *};
 use napi_derive::napi;
 use option::*;
@@ -35,7 +34,7 @@ impl SuperCluster {
   }
 
   #[napi]
-  pub fn load(&mut self, points: Vec<Feature>) -> &mut SuperCluster {
+  pub fn load(&mut self, points: Vec<Feature>) -> SuperCluster {
     let (max_zoom, min_zoom, node_size) = (
       self.options.max_zoom.unwrap_or_default(),
       self.options.min_zoom.unwrap_or_default(),
@@ -65,7 +64,11 @@ impl SuperCluster {
         .collect();
       self.trees[z as usize] = Some(KDBush::create(result, node_size));
     }
-    self
+    SuperCluster {
+      options: self.options,
+      points: Some(points),
+      trees: self.trees.clone()
+    }
   }
 
   fn _cluster(&self, points: &mut Vec<PointCluster>, zoom: u8) -> Vec<Cluster> {

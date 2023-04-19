@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use napi_derive::napi;
-
+use napi::{JsUnknown};
 #[napi(object)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Geometry {
@@ -9,9 +9,8 @@ pub struct Geometry {
 }
 
 #[napi(object)]
-#[derive(Debug,Clone, PartialEq)]
 pub struct Feature {
     pub _type: String,
-    pub properties: HashMap<String, String>,
+    pub properties:HashMap<String, JsUnknown>,
     pub geometry: Geometry,
 }
