@@ -25,4 +25,5 @@ export interface Feature {
 export class SuperCluster {
   constructor(options?: DefaultOptions | undefined | null)
   load(points: Array<Feature>): SuperCluster
+  getClusters(bbox: Array<number>, zoom: number): boolean
 }
